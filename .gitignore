@@ -43,3 +43,4 @@ app-example
 # Ignore Firebase configuration files
 google-services.json
 android/app/google-services.json
+.env
