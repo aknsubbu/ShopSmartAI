@@ -154,7 +154,7 @@ export default function ProfileScreen() {
 
   const loadUserProfile = async () => {
     if (!user) return;
-    
+
     try {
       const profile = await authService.getUserProfile(user.uid);
       setUserProfile(profile);
@@ -178,36 +178,34 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = () => {
-    Alert.alert(
-      "Sign Out",
-      "Are you sure you want to sign out?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await signOut();
+            router.replace("/auth/login");
+          } catch (error) {
+            Alert.alert("Error", "Failed to sign out. Please try again.");
+          }
         },
-        {
-          text: "Sign Out",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await signOut();
-              router.replace("/auth/login");
-            } catch (error) {
-              Alert.alert("Error", "Failed to sign out. Please try again.");
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   if (!user) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={styles.errorText}>Please sign in to view your profile</Text>
-        <TouchableOpacity 
-          style={styles.signInButton} 
+        <Text style={styles.errorText}>
+          Please sign in to view your profile
+        </Text>
+        <TouchableOpacity
+          style={styles.signInButton}
           onPress={() => router.replace("/auth/login")}
         >
           <Text style={styles.signInButtonText}>Sign In</Text>
@@ -298,9 +296,7 @@ export default function ProfileScreen() {
           <Text style={styles.email}>{email}</Text>
           <View style={styles.membershipBadge}>
             <Ionicons name="star" size={16} color={colors.primary} />
-            <Text style={styles.membershipText}>
-              {membershipLevel} Member
-            </Text>
+            <Text style={styles.membershipText}>{membershipLevel} Member</Text>
           </View>
         </View>
       </View>
@@ -352,17 +348,16 @@ export default function ProfileScreen() {
             ))}
           </View>
         ))}
+        {/* Logout Button */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
+          <Ionicons
+            name="log-out-outline"
+            size={24}
+            color={colors.status.error}
+          />
+          <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
       </ScrollView>
-
-      {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
-        <Ionicons
-          name="log-out-outline"
-          size={24}
-          color={colors.status.error}
-        />
-        <Text style={styles.logoutText}>Log Out</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -371,6 +366,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.light,
+    paddingBottom: spacing["3xl"],
+    marginBottom: spacing["3xl"],
   },
   centerContent: {
     alignItems: "center",

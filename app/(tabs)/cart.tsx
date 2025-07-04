@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
+  Alert,
   Animated,
   Image,
   PanResponder,
@@ -9,13 +11,11 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Alert,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { colors, spacing, typography } from "../../constants/theme";
-import { useCart } from "../../contexts/CartContext";
 import { useAuth } from "../../contexts/AuthContext";
-import { useRouter } from "expo-router";
+import { useCart } from "../../contexts/CartContext";
 
 // Mock data
 const mockCartItems = [
@@ -49,7 +49,13 @@ const suggestedCommands = [
 
 export default function CartScreen() {
   const { user } = useAuth();
-  const { cart, removeFromCart, updateCartItemQuantity, clearCart, getCartTotal } = useCart();
+  const {
+    cart,
+    removeFromCart,
+    updateCartItemQuantity,
+    clearCart,
+    getCartTotal,
+  } = useCart();
   const router = useRouter();
   const [isListening, setIsListening] = useState(false);
   const slideValue = useRef(new Animated.Value(0)).current;
@@ -67,12 +73,12 @@ export default function CartScreen() {
 
   const handleQuantityChange = async (itemId: string, change: number) => {
     if (!cart) return;
-    
-    const item = cart.items.find(item => item.id === itemId);
+
+    const item = cart.items.find((item) => item.id === itemId);
     if (!item) return;
-    
+
     const newQuantity = Math.max(1, item.quantity + change);
-    
+
     try {
       await updateCartItemQuantity(itemId, newQuantity);
     } catch (error) {
@@ -178,9 +184,15 @@ export default function CartScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {!user ? (
           <View style={styles.emptyCartContainer}>
-            <Ionicons name="person-outline" size={64} color={colors.text.secondary} />
-            <Text style={styles.emptyCartText}>Please sign in to view your cart</Text>
-            <TouchableOpacity 
+            <Ionicons
+              name="person-outline"
+              size={64}
+              color={colors.text.secondary}
+            />
+            <Text style={styles.emptyCartText}>
+              Please sign in to view your cart
+            </Text>
+            <TouchableOpacity
               style={styles.signInButton}
               onPress={() => router.push("/auth/login")}
             >
@@ -189,10 +201,16 @@ export default function CartScreen() {
           </View>
         ) : !cart || cart.items.length === 0 ? (
           <View style={styles.emptyCartContainer}>
-            <Ionicons name="cart-outline" size={64} color={colors.text.secondary} />
+            <Ionicons
+              name="cart-outline"
+              size={64}
+              color={colors.text.secondary}
+            />
             <Text style={styles.emptyCartText}>Your cart is empty</Text>
-            <Text style={styles.emptyCartSubText}>Add some items to get started</Text>
-            <TouchableOpacity 
+            <Text style={styles.emptyCartSubText}>
+              Add some items to get started
+            </Text>
+            <TouchableOpacity
               style={styles.shopButton}
               onPress={() => router.push("/(tabs)/search")}
             >
@@ -203,9 +221,12 @@ export default function CartScreen() {
           cart.items.map((item) => (
             <View key={item.id} style={styles.cartItem}>
               <View style={styles.itemImageContainer}>
-                <Image 
-                  source={{ uri: item.product.images[0] || "https://picsum.photos/200/200" }} 
-                  style={styles.itemImage} 
+                <Image
+                  source={{
+                    uri:
+                      item.product.images[0] || "https://picsum.photos/200/200",
+                  }}
+                  style={styles.itemImage}
                 />
               </View>
               <View style={styles.itemDetails}>
@@ -214,7 +235,9 @@ export default function CartScreen() {
                   {item.product.title}
                 </Text>
                 {item.selectedVariant && (
-                  <Text style={styles.itemColor}>Variant: {item.selectedVariant}</Text>
+                  <Text style={styles.itemColor}>
+                    Variant: {item.selectedVariant}
+                  </Text>
                 )}
                 <View style={styles.itemActions}>
                   <View style={styles.quantityContainer}>

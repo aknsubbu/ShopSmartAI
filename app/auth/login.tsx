@@ -151,12 +151,20 @@ export default function LoginScreen() {
               </View>
 
               <TouchableOpacity style={styles.googleButton}>
-                <Ionicons name="logo-google" size={20} color={colors.text.primary} />
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
+                <Ionicons
+                  name="logo-google"
+                  size={20}
+                  color={colors.text.primary}
+                />
+                <Text style={styles.googleButtonText}>
+                  Continue with Google
+                </Text>
               </TouchableOpacity>
 
               <View style={styles.signUpContainer}>
-                <Text style={styles.signUpText}>Don't have an account? </Text>
+                <Text style={styles.signUpText}>
+                  Don&apos;t have an account?{" "}
+                </Text>
                 <Link href="/auth/signup" asChild>
                   <TouchableOpacity>
                     <Text style={styles.signUpLink}>Sign Up</Text>

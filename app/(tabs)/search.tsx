@@ -1,8 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Animated,
   Dimensions,
   FlatList,
@@ -13,29 +16,26 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  ActivityIndicator,
-  Alert,
 } from "react-native";
 import { ProductCard } from "../../components/ui/ProductCard";
 import { StatusBar } from "../../components/ui/StatusBar";
 import { colors, spacing, typography } from "../../constants/theme";
-import { productService, ProductCategory } from "../../services/productService";
-import { Product } from "../../services/cartService";
-import { useCart } from "../../contexts/CartContext";
 import { useAuth } from "../../contexts/AuthContext";
-import { useRouter } from "expo-router";
+import { useCart } from "../../contexts/CartContext";
+import { Product } from "../../services/cartService";
+import { ProductCategory, productService } from "../../services/productService";
 
 const { width, height } = Dimensions.get("window");
 
 // Category icon mapping
 const categoryIconMap: Record<string, string> = {
-  "Electronics": "phone-portrait",
-  "Fashion": "shirt",
-  "Home": "home",
-  "Beauty": "sparkles",
-  "Sports": "basketball",
-  "Books": "book",
-  "Clothing": "shirt-outline",
+  Electronics: "phone-portrait",
+  Fashion: "shirt",
+  Home: "home",
+  Beauty: "sparkles",
+  Sports: "basketball",
+  Books: "book",
+  Clothing: "shirt-outline",
   "Home & Kitchen": "home-outline",
 };
 
@@ -67,6 +67,40 @@ const trendingSearches = [
   "Skincare Set",
 ];
 
+const parseImageUrls = (imageString: any) => {
+  if (!imageString || typeof imageString !== "string") {
+    return [];
+  }
+
+  try {
+    // Parse the stringified JSON array
+    const parsedImages = JSON.parse(imageString);
+
+    // Ensure it's an array
+    if (!Array.isArray(parsedImages)) {
+      return [];
+    }
+
+    // Filter out any invalid URLs
+    return parsedImages.filter((url) => {
+      if (typeof url !== "string" || !url.trim()) {
+        return false;
+      }
+
+      // Basic URL validation
+      try {
+        new URL(url);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+  } catch (error) {
+    console.error("Error parsing image URLs:", error);
+    return [];
+  }
+};
+
 const mockProducts = [
   {
     id: "1",
@@ -96,14 +130,14 @@ export default function SearchScreen() {
   const { user } = useAuth();
   const { addToCart } = useCart();
   const router = useRouter();
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState("1");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showTrending, setShowTrending] = useState(true);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  
+
   // Data states
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -119,7 +153,7 @@ export default function SearchScreen() {
 
   useEffect(() => {
     loadInitialData();
-    
+
     // Initial fade in animation
     Animated.timing(fadeInAnimation, {
       toValue: 1,
@@ -147,13 +181,13 @@ export default function SearchScreen() {
         productService.getCategories(),
         productService.getFeaturedProducts(10),
       ]);
-      
+
       setCategories(categoriesData);
       setFeaturedProducts(featuredData);
       setProducts(featuredData); // Initially show featured products
     } catch (error) {
-      console.error('Error loading initial data:', error);
-      Alert.alert('Error', 'Failed to load data. Please try again.');
+      console.error("Error loading initial data:", error);
+      Alert.alert("Error", "Failed to load data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -210,20 +244,24 @@ export default function SearchScreen() {
   };
 
   const handleCategoryPress = async (categoryId: string) => {
-    const newSelectedCategory = categoryId === selectedCategory ? null : categoryId;
+    const newSelectedCategory =
+      categoryId === selectedCategory ? null : categoryId;
     setSelectedCategory(newSelectedCategory);
-    
+
     if (newSelectedCategory) {
       try {
         setLoading(true);
-        const category = categories.find(c => c.id === categoryId);
+        const category = categories.find((c) => c.id === categoryId);
         if (category) {
-          const result = await productService.getProductsByCategory(category.name, 20);
+          const result = await productService.getProductsByCategory(
+            category.name,
+            20
+          );
           setProducts(result.products);
         }
       } catch (error) {
-        console.error('Error loading category products:', error);
-        Alert.alert('Error', 'Failed to load category products.');
+        console.error("Error loading category products:", error);
+        Alert.alert("Error", "Failed to load category products.");
       } finally {
         setLoading(false);
       }
@@ -255,8 +293,8 @@ export default function SearchScreen() {
       const result = await productService.searchProducts(query, {}, 20);
       setProducts(result.products);
     } catch (error) {
-      console.error('Error searching products:', error);
-      Alert.alert('Error', 'Failed to search products.');
+      console.error("Error searching products:", error);
+      Alert.alert("Error", "Failed to search products.");
     } finally {
       setSearchLoading(false);
     }
@@ -264,19 +302,23 @@ export default function SearchScreen() {
 
   const handleAddToCart = async (product: Product) => {
     if (!user) {
-      Alert.alert('Sign In Required', 'Please sign in to add items to your cart.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign In', onPress: () => router.push('/auth/login') },
-      ]);
+      Alert.alert(
+        "Sign In Required",
+        "Please sign in to add items to your cart.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Sign In", onPress: () => router.push("/auth/login") },
+        ]
+      );
       return;
     }
 
     try {
       await addToCart(product, 1);
-      Alert.alert('Success', `${product.title} added to cart!`);
+      Alert.alert("Success", `${product.title} added to cart!`);
     } catch (error) {
-      console.error('Error adding to cart:', error);
-      Alert.alert('Error', 'Failed to add item to cart.');
+      console.error("Error adding to cart:", error);
+      Alert.alert("Error", "Failed to add item to cart.");
     }
   };
 
@@ -313,10 +355,10 @@ export default function SearchScreen() {
       >
         <View style={styles.categoryContent}>
           <View style={styles.categoryIconContainer}>
-            <Ionicons 
-              name={(categoryIconMap[item.name] || "grid-outline") as any} 
-              size={28} 
-              color={colors.primary} 
+            <Ionicons
+              name={(categoryIconMap[item.name] || "grid-outline") as any}
+              size={28}
+              color={colors.primary}
             />
           </View>
           <Text style={styles.categoryName}>{item.name}</Text>
@@ -598,9 +640,15 @@ export default function SearchScreen() {
             </View>
           ) : products.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Ionicons name="search-outline" size={64} color={colors.text.secondary} />
+              <Ionicons
+                name="search-outline"
+                size={64}
+                color={colors.text.secondary}
+              />
               <Text style={styles.emptyText}>No products found</Text>
-              <Text style={styles.emptySubText}>Try adjusting your search or browse categories</Text>
+              <Text style={styles.emptySubText}>
+                Try adjusting your search or browse categories
+              </Text>
             </View>
           ) : (
             <FlatList
@@ -608,26 +656,39 @@ export default function SearchScreen() {
               numColumns={2}
               renderItem={({ item }) => (
                 <View style={styles.productWrapper}>
-                  <ProductCard
-                    id={item.id}
-                    title={item.title}
-                    brand={item.brand}
-                    price={item.price}
-                    originalPrice={item.originalPrice}
-                    imageUrl={item.images[0] || "https://picsum.photos/400/400"}
-                    rating={item.rating}
-                    isNew={item.createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)} // New if created within 7 days
-                    onPress={() => {
-                      router.push(`/(tabs)/product/${item.id}`);
-                    }}
-                    onVoicePress={() => {
-                      setIsListening(true);
-                    }}
-                    onAddToCart={() => handleAddToCart(item)}
-                    onAddToWishlist={() => {
-                      // Add to wishlist logic
-                    }}
-                  />
+                  {(() => {
+                    // Parse the image URLs from the string
+                    const imageUrls = parseImageUrls(item.images[0] || "");
+
+                    // Get the first image URL or use placeholder
+                    const imageUrl =
+                      imageUrls.length > 0
+                        ? imageUrls[0]
+                        : "https://picsum.photos/400/400";
+
+                    // Return the ProductCard component
+                    return (
+                      <ProductCard
+                        id={item.id}
+                        title={item.title}
+                        brand={item.brand}
+                        onVoicePress={() => {}}
+                        price={item.price}
+                        originalPrice={item.originalPrice}
+                        imageUrl={imageUrl}
+                        rating={item.rating}
+                        isNew={
+                          item.createdAt >
+                          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                        }
+                        onPress={() =>
+                          router.push(`/(tabs)/product/${item.id}`)
+                        }
+                        onAddToCart={() => handleAddToCart(item)}
+                        onAddToWishlist={() => {}}
+                      />
+                    );
+                  })()}
                 </View>
               )}
               keyExtractor={(item) => item.id}

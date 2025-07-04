@@ -1,3 +1,5 @@
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -16,8 +18,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, shadows, spacing, typography } from "../../../constants/theme";
 import { Product } from "../../../services/cartService";
 import { productService } from "../../../services/productService";
-import { useCart } from "../../../contexts/CartContext";
-import { useAuth } from "../../../contexts/AuthContext";
 
 const { width } = Dimensions.get("window");
 
@@ -26,7 +26,7 @@ export default function ProductDetailScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { addToCart } = useCart();
-  
+
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -44,19 +44,59 @@ export default function ProductDetailScreen() {
       const productData = await productService.getProduct(id!);
       setProduct(productData);
     } catch (error) {
-      console.error('Error loading product:', error);
-      Alert.alert('Error', 'Failed to load product details.');
+      console.error("Error loading product:", error);
+      Alert.alert("Error", "Failed to load product details.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Helper function to parse the image URLs
+  // Helper function to parse the image URLs from stringified JSON array
+  const parseImageUrls = (imageString: any) => {
+    if (!imageString || typeof imageString !== "string") {
+      return [];
+    }
+
+    try {
+      // Parse the stringified JSON array
+      const parsedImages = JSON.parse(imageString);
+
+      // Ensure it's an array
+      if (!Array.isArray(parsedImages)) {
+        return [];
+      }
+
+      // Filter out any invalid URLs
+      return parsedImages.filter((url) => {
+        if (typeof url !== "string" || !url.trim()) {
+          return false;
+        }
+
+        // Basic URL validation
+        try {
+          new URL(url);
+          return true;
+        } catch {
+          return false;
+        }
+      });
+    } catch (error) {
+      console.error("Error parsing image URLs:", error);
+      return [];
+    }
+  };
+
   const handleAddToCart = async () => {
     if (!user) {
-      Alert.alert('Sign In Required', 'Please sign in to add items to your cart.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign In', onPress: () => router.push('/auth/login') },
-      ]);
+      Alert.alert(
+        "Sign In Required",
+        "Please sign in to add items to your cart.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Sign In", onPress: () => router.push("/auth/login") },
+        ]
+      );
       return;
     }
 
@@ -64,24 +104,24 @@ export default function ProductDetailScreen() {
 
     try {
       await addToCart(product, quantity);
-      Alert.alert('Success', `${product.title} added to cart!`);
+      Alert.alert("Success", `${product.title} added to cart!`);
     } catch (error) {
-      console.error('Error adding to cart:', error);
-      Alert.alert('Error', 'Failed to add item to cart.');
+      console.error("Error adding to cart:", error);
+      Alert.alert("Error", "Failed to add item to cart.");
     }
   };
 
   const handleBuyNow = async () => {
     if (!user) {
-      Alert.alert('Sign In Required', 'Please sign in to purchase items.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign In', onPress: () => router.push('/auth/login') },
+      Alert.alert("Sign In Required", "Please sign in to purchase items.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Sign In", onPress: () => router.push("/auth/login") },
       ]);
       return;
     }
 
     await handleAddToCart();
-    router.push('/(tabs)/cart');
+    router.push("/(tabs)/cart");
   };
 
   if (loading) {
@@ -96,9 +136,16 @@ export default function ProductDetailScreen() {
   if (!product) {
     return (
       <SafeAreaView style={[styles.container, styles.centerContent]}>
-        <Ionicons name="alert-circle-outline" size={64} color={colors.text.secondary} />
+        <Ionicons
+          name="alert-circle-outline"
+          size={64}
+          color={colors.text.secondary}
+        />
         <Text style={styles.errorText}>Product not found</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <Text style={styles.backButtonText}>Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -114,7 +161,11 @@ export default function ProductDetailScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Product Details</Text>
         <TouchableOpacity style={styles.shareIcon}>
-          <Ionicons name="share-outline" size={24} color={colors.text.primary} />
+          <Ionicons
+            name="share-outline"
+            size={24}
+            color={colors.text.primary}
+          />
         </TouchableOpacity>
       </View>
 
@@ -126,20 +177,43 @@ export default function ProductDetailScreen() {
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             onMomentumScrollEnd={(event) => {
-              const index = Math.round(event.nativeEvent.contentOffset.x / width);
+              const index = Math.round(
+                event.nativeEvent.contentOffset.x / width
+              );
               setSelectedImageIndex(index);
             }}
           >
-            {product.images.map((image, index) => (
-              <Image
-                key={index}
-                source={{ uri: image || "https://picsum.photos/400/400" }}
-                style={styles.productImage}
-                resizeMode="cover"
-              />
-            ))}
+            {(() => {
+              // Parse the image URLs from the string
+              const imageUrls = parseImageUrls(product.images[0] || "");
+
+              // If no valid URLs found, show placeholder
+              if (imageUrls.length === 0) {
+                return (
+                  <Image
+                    key={0}
+                    source={{ uri: "https://picsum.photos/400/400" }}
+                    style={styles.productImage}
+                    resizeMode="cover"
+                  />
+                );
+              }
+
+              // Render each image
+              return imageUrls.map((imageUrl, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: imageUrl }}
+                  style={styles.productImage}
+                  resizeMode="cover"
+                  onError={(error) => {
+                    console.log(`Image ${index} failed to load:`, error);
+                  }}
+                />
+              ));
+            })()}
           </ScrollView>
-          
+
           {/* Image Indicators */}
           {product.images.length > 1 && (
             <View style={styles.imageIndicators}>
@@ -163,20 +237,29 @@ export default function ProductDetailScreen() {
             <View style={styles.ratingContainer}>
               <Ionicons name="star" size={16} color="#FFD700" />
               <Text style={styles.rating}>{product.rating}</Text>
-              <Text style={styles.reviewCount}>({product.reviewCount} reviews)</Text>
+              <Text style={styles.reviewCount}>
+                ({product.reviewCount} reviews)
+              </Text>
             </View>
           </View>
 
           <Text style={styles.title}>{product.title}</Text>
-          
+
           <View style={styles.priceContainer}>
             <Text style={styles.price}>${product.price.toFixed(2)}</Text>
             {product.originalPrice && product.originalPrice > product.price && (
               <>
-                <Text style={styles.originalPrice}>${product.originalPrice.toFixed(2)}</Text>
+                <Text style={styles.originalPrice}>
+                  ${product.originalPrice.toFixed(2)}
+                </Text>
                 <View style={styles.discountBadge}>
                   <Text style={styles.discountText}>
-                    {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                    {Math.round(
+                      ((product.originalPrice - product.price) /
+                        product.originalPrice) *
+                        100
+                    )}
+                    % OFF
                   </Text>
                 </View>
               </>
@@ -186,30 +269,46 @@ export default function ProductDetailScreen() {
           <Text style={styles.description}>{product.description}</Text>
 
           {/* Specifications */}
-          {product.specifications && Object.keys(product.specifications).length > 0 && (
-            <View style={styles.specificationsContainer}>
-              <Text style={styles.specificationsTitle}>Specifications</Text>
-              {Object.entries(product.specifications).map(([key, value]) => (
-                <View key={key} style={styles.specificationRow}>
-                  <Text style={styles.specificationKey}>{key}:</Text>
-                  <Text style={styles.specificationValue}>{value}</Text>
-                </View>
-              ))}
-            </View>
-          )}
+          {product.specifications &&
+            Object.keys(product.specifications).length > 0 && (
+              <View style={styles.specificationsContainer}>
+                <Text style={styles.specificationsTitle}>Specifications</Text>
+                {Object.entries(product.specifications).map(([key, value]) => (
+                  <View key={key} style={styles.specificationRow}>
+                    <Text style={styles.specificationKey}>{key}:</Text>
+                    <Text style={styles.specificationValue}>{value}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
 
           {/* Stock Status */}
           <View style={styles.stockContainer}>
-            <Ionicons 
-              name={product.inStock ? "checkmark-circle" : "close-circle"} 
-              size={20} 
-              color={product.inStock ? colors.status.success : colors.status.error} 
+            <Ionicons
+              name={
+                product.stockQuantity > 0 ? "checkmark-circle" : "close-circle"
+              }
+              size={20}
+              color={
+                product.stockQuantity > 0
+                  ? colors.status.success
+                  : colors.status.error
+              }
             />
-            <Text style={[
-              styles.stockText,
-              { color: product.inStock ? colors.status.success : colors.status.error }
-            ]}>
-              {product.inStock ? `In Stock (${product.stockQuantity} available)` : 'Out of Stock'}
+            <Text
+              style={[
+                styles.stockText,
+                {
+                  color:
+                    product.stockQuantity > 0
+                      ? colors.status.success
+                      : colors.status.error,
+                },
+              ]}
+            >
+              {product.stockQuantity > 0
+                ? `In Stock (${product.stockQuantity} available)`
+                : "Out of Stock"}
             </Text>
           </View>
 
@@ -222,12 +321,18 @@ export default function ProductDetailScreen() {
                   style={styles.quantityButton}
                   onPress={() => setQuantity(Math.max(1, quantity - 1))}
                 >
-                  <Ionicons name="remove" size={18} color={colors.text.primary} />
+                  <Ionicons
+                    name="remove"
+                    size={18}
+                    color={colors.text.primary}
+                  />
                 </TouchableOpacity>
                 <Text style={styles.quantityText}>{quantity}</Text>
                 <TouchableOpacity
                   style={styles.quantityButton}
-                  onPress={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
+                  onPress={() =>
+                    setQuantity(Math.min(product.stockQuantity, quantity + 1))
+                  }
                 >
                   <Ionicons name="add" size={18} color={colors.text.primary} />
                 </TouchableOpacity>
@@ -240,7 +345,10 @@ export default function ProductDetailScreen() {
       {/* Bottom Actions */}
       {product.inStock && (
         <View style={styles.bottomActions}>
-          <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
+          <TouchableOpacity
+            style={styles.addToCartButton}
+            onPress={handleAddToCart}
+          >
             <Ionicons name="cart-outline" size={20} color={colors.text.light} />
             <Text style={styles.addToCartText}>Add to Cart</Text>
           </TouchableOpacity>
@@ -454,6 +562,7 @@ const styles = StyleSheet.create({
   bottomActions: {
     flexDirection: "row",
     padding: spacing.base,
+    paddingBottom: spacing["3xl"],
     borderTopWidth: 1,
     borderTopColor: colors.border,
     gap: spacing.base,

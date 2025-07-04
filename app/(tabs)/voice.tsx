@@ -604,6 +604,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.light,
+    paddingBottom: spacing.lg,
   },
   backgroundGradient: {
     position: "absolute",
@@ -727,13 +728,14 @@ const styles = StyleSheet.create({
   orbContainer: {
     position: "absolute",
     alignSelf: "center",
+    paddingBottom: spacing["xl"],
     alignItems: "center",
     justifyContent: "center",
     zIndex: 5,
   },
   pulseRing: {
     position: "absolute",
-    borderRadius: 80,
+    borderRadius: 70,
     borderWidth: 2,
   },
   pulseRing1: {
@@ -749,6 +751,7 @@ const styles = StyleSheet.create({
   orb: {
     width: 140,
     height: 140,
+    paddingBottom: spacing.sm,
     borderRadius: 70,
     position: "absolute",
     shadowColor: colors.primary,
@@ -807,6 +810,7 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     marginTop: spacing.sm,
+    paddingBottom: spacing["3xl"],
   },
   inputWrapper: {
     flexDirection: "row",
