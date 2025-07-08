@@ -104,22 +104,53 @@ export default function HomeScreen() {
   const bannerScrollX = useRef(new Animated.Value(0)).current;
   const quickActionAnimation = useRef(new Animated.Value(0)).current;
 
-  const parseImageUrls = (imageString: any) => {
-    if (!imageString || typeof imageString !== "string") {
+  const parseImageUrls = (images: any) => {
+    if (!images) {
       return [];
     }
 
-    try {
-      // Parse the stringified JSON array
-      const parsedImages = JSON.parse(imageString);
+    // Handle string input
+    if (typeof images === "string") {
+      // Check if it's a JSON string (starts with '[' or '{')
+      if (images.trim().startsWith("[") || images.trim().startsWith("{")) {
+        try {
+          const parsedImages = JSON.parse(images);
 
-      // Ensure it's an array
-      if (!Array.isArray(parsedImages)) {
-        return [];
+          if (!Array.isArray(parsedImages)) {
+            return [];
+          }
+
+          return parsedImages.filter((url) => {
+            if (typeof url !== "string" || !url.trim()) {
+              return false;
+            }
+
+            // Basic URL validation
+            try {
+              new URL(url);
+              return true;
+            } catch {
+              return false;
+            }
+          });
+        } catch (error) {
+          console.error("Error parsing image URLs:", error);
+          return [];
+        }
+      } else {
+        // It's a single URL string
+        try {
+          new URL(images);
+          return [images];
+        } catch {
+          return [];
+        }
       }
+    }
 
-      // Filter out any invalid URLs
-      return parsedImages.filter((url) => {
+    // Handle array input (direct array of URLs)
+    if (Array.isArray(images)) {
+      return images.filter((url) => {
         if (typeof url !== "string" || !url.trim()) {
           return false;
         }
@@ -132,10 +163,10 @@ export default function HomeScreen() {
           return false;
         }
       });
-    } catch (error) {
-      console.error("Error parsing image URLs:", error);
-      return [];
     }
+
+    // Handle any other type
+    return [];
   };
 
   useEffect(() => {
@@ -380,6 +411,44 @@ export default function HomeScreen() {
     </View>
   );
 
+  const renderTrendingCard = ({ item }: { item: Product }) => (
+    <View style={styles.flashSaleCard}>
+      {(() => {
+        // Parse the image URLs from the string
+        const imageUrls = parseImageUrls(item.images[0] || "");
+
+        // Get the first image URL or use placeholder
+        const imageUrl =
+          imageUrls.length > 0 ? imageUrls[0] : "https://picsum.photos/400/400";
+
+        // Return the ProductCard component
+        return (
+          <ProductCard
+            id={item.id}
+            title={item.title}
+            brand={item.brand}
+            onVoicePress={() => {}}
+            price={item.price}
+            originalPrice={item.originalPrice}
+            imageUrl={imageUrl}
+            rating={item.rating}
+            isNew={
+              item.createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+            }
+            onPress={() => router.push(`/(tabs)/product/${item.id}`)}
+            onAddToCart={() => handleAddToCart(item)}
+            onAddToWishlist={() => {}}
+          />
+        );
+      })()}
+
+      <View style={styles.flashSaleBadge}>
+        <Ionicons name="trending-up" size={12} color="white" />
+        <Text style={styles.flashSaleText}>Trending</Text>
+      </View>
+    </View>
+  );
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -570,44 +639,10 @@ export default function HomeScreen() {
           </View>
           <FlatList
             data={trendingProducts}
-            numColumns={2}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <View style={styles.trendingProductWrapper}>
-                {(() => {
-                  // Parse the image URLs from the string
-                  const imageUrls = parseImageUrls(item.images[0] || "");
-
-                  // Get the first image URL or use placeholder
-                  const imageUrl =
-                    imageUrls.length > 0
-                      ? imageUrls[0]
-                      : "https://picsum.photos/400/400";
-
-                  // Return the ProductCard component
-                  return (
-                    <ProductCard
-                      id={item.id}
-                      title={item.title}
-                      brand={item.brand}
-                      onVoicePress={() => {}}
-                      price={item.price}
-                      originalPrice={item.originalPrice}
-                      imageUrl={imageUrl}
-                      rating={item.rating}
-                      isNew={
-                        item.createdAt >
-                        new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                      }
-                      onPress={() => router.push(`/(tabs)/product/${item.id}`)}
-                      onAddToCart={() => handleAddToCart(item)}
-                      onAddToWishlist={() => {}}
-                    />
-                  );
-                })()}
-              </View>
-            )}
-            contentContainerStyle={styles.trendingGrid}
+            renderItem={renderTrendingCard}
+            horizontal
+            showsHorizontalScrollIndicator={true}
+            contentContainerStyle={styles.flashSaleContainer}
           />
         </View>
 
@@ -998,6 +1033,7 @@ const styles = StyleSheet.create({
   },
   trendingProductsContainer: {
     paddingHorizontal: spacing.base,
+    padding: spacing["2xl"],
     gap: spacing.base,
   },
   trendingProductWrapper: {
@@ -1018,7 +1054,9 @@ const styles = StyleSheet.create({
     gap: spacing.base,
   },
   trendingGrid: {
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: spacing.xs,
+    paddingBottom: spacing.lg,
+    marginTop: spacing.base,
     gap: spacing.base,
   },
   bottomSpacing: {

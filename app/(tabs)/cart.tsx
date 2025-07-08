@@ -121,6 +121,7 @@ export default function CartScreen() {
             useNativeDriver: false,
           }).start(() => {
             console.log("Proceeding to checkout...");
+            // TODO: Add checkout logic here
             // Reset the slider after a brief moment
             setTimeout(() => {
               Animated.spring(slideValue, {
@@ -365,6 +366,7 @@ export default function CartScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingBottom: spacing["2xl"],
     backgroundColor: colors.background.light,
   },
   header: {

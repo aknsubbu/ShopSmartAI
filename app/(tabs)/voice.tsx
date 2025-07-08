@@ -416,38 +416,7 @@ export default function VoiceScreen() {
         </ScrollView>
 
         {/* Input Container */}
-        <View style={styles.inputContainer}>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              ref={textInputRef}
-              style={styles.input}
-              placeholder="Type your message..."
-              value={textInput}
-              onChangeText={setTextInput}
-              placeholderTextColor={colors.text.secondary}
-              multiline
-              maxLength={500}
-              returnKeyType="send"
-              onSubmitEditing={handleSendMessage}
-            />
-            <TouchableOpacity
-              style={[
-                styles.sendButton,
-                textInput.trim() ? styles.sendButtonActive : null,
-              ]}
-              onPress={handleSendMessage}
-              disabled={!textInput.trim()}
-            >
-              <Ionicons
-                name="send"
-                size={20}
-                color={
-                  textInput.trim() ? colors.text.light : colors.text.secondary
-                }
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <View style={styles.inputContainer}></View>
       </BlurView>
     </View>
   );
@@ -728,7 +697,7 @@ const styles = StyleSheet.create({
   orbContainer: {
     position: "absolute",
     alignSelf: "center",
-    paddingBottom: spacing["xl"],
+    paddingBottom: spacing["2xl"],
     alignItems: "center",
     justifyContent: "center",
     zIndex: 5,
@@ -779,13 +748,13 @@ const styles = StyleSheet.create({
   bottomSection: {
     paddingTop: spacing.base,
     paddingHorizontal: spacing.base,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing["3xl"],
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: "hidden",
   },
   suggestionsContainer: {
-    marginBottom: spacing.base,
+    marginBottom: spacing.lg,
   },
   suggestionsContent: {
     paddingHorizontal: spacing.xs,
@@ -809,7 +778,6 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
   inputContainer: {
-    marginTop: spacing.sm,
     paddingBottom: spacing["3xl"],
   },
   inputWrapper: {

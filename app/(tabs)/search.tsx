@@ -67,22 +67,53 @@ const trendingSearches = [
   "Skincare Set",
 ];
 
-const parseImageUrls = (imageString: any) => {
-  if (!imageString || typeof imageString !== "string") {
+const parseImageUrls = (images: any) => {
+  if (!images) {
     return [];
   }
 
-  try {
-    // Parse the stringified JSON array
-    const parsedImages = JSON.parse(imageString);
+  // Handle string input
+  if (typeof images === "string") {
+    // Check if it's a JSON string (starts with '[' or '{')
+    if (images.trim().startsWith("[") || images.trim().startsWith("{")) {
+      try {
+        const parsedImages = JSON.parse(images);
 
-    // Ensure it's an array
-    if (!Array.isArray(parsedImages)) {
-      return [];
+        if (!Array.isArray(parsedImages)) {
+          return [];
+        }
+
+        return parsedImages.filter((url) => {
+          if (typeof url !== "string" || !url.trim()) {
+            return false;
+          }
+
+          // Basic URL validation
+          try {
+            new URL(url);
+            return true;
+          } catch {
+            return false;
+          }
+        });
+      } catch (error) {
+        console.error("Error parsing image URLs:", error);
+        return [];
+      }
+    } else {
+      // It's a single URL string
+      try {
+        new URL(images);
+        return [images];
+      } catch {
+        return [];
+      }
     }
+  }
 
-    // Filter out any invalid URLs
-    return parsedImages.filter((url) => {
+  // Handle array input (direct array of URLs)
+  if (Array.isArray(images)) {
+    return images.filter((url) => {
       if (typeof url !== "string" || !url.trim()) {
         return false;
       }
@@ -95,10 +126,10 @@ const parseImageUrls = (imageString: any) => {
         return false;
       }
     });
-  } catch (error) {
-    console.error("Error parsing image URLs:", error);
-    return [];
   }
+
+  // Handle any other type
+  return [];
 };
 
 const mockProducts = [
